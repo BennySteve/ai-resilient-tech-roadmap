@@ -1,0 +1,117 @@
+import sqlite3
+
+
+# 1. Database Initialization
+def init_db():
+    with sqlite3.connect("expenses.db") as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS expenses (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                item TEXT NOT NULL,
+                amount REAL NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+
+# 2. Add Expense (CREATE)
+def add_expense_db(item, amount):
+    with sqlite3.connect("expenses.db") as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO expenses (item, amount) VALUES (?, ?)",
+            (item, amount)
+        )
+        print(f"Added '{item}' (${amount:.2f}) to database.")
+
+
+# 3. View Expenses (READ)
+def view_expenses_db():
+    with sqlite3.connect("expenses.db") as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT id, item, amount, created_at FROM expenses"
+        )
+        rows = cursor.fetchall()
+
+    if not rows:
+        print("\nNo expenses found in database.\n")
+        return
+
+    print("\n--- Your Expenses (SQLite) ---")
+    total = 0.0
+
+    for row in rows:
+        expense_id, item, amount, created_at = row
+        print(
+            f"ID {expense_id}: {item} - ${amount:.2f} "
+            f"(Added: {created_at})"
+        )
+        total += amount
+
+    print("-------------------------------")
+    print(f"Total Spent: ${total:.2f}\n")
+
+
+# 4. Delete Expense (DELETE)
+def delete_expense_db(expense_id):
+    with sqlite3.connect("expenses.db") as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            "DELETE FROM expenses WHERE id = ?",
+            (expense_id,)
+        )
+
+        if cursor.rowcount == 0:
+            print(f"No expense found with ID {expense_id}.")
+        else:
+            print(f"Successfully deleted expense ID {expense_id}.")
+
+
+# Main Application Menu Loop
+def main():
+    init_db()
+
+    while True:
+        print("=== SQLite Expense Tracker (Project 2) ===")
+        print("1. Add Expense")
+        print("2. View All Expenses")
+        print("3. Delete Expense by ID")
+        print("4. Exit")
+
+        choice = input("Choose an option (1-4): ").strip()
+
+        if choice == "1":
+            item = input("Enter item name: ").strip()
+
+            try:
+                amount = float(
+                    input("Enter amount ($): ").strip().lstrip("$")
+                )
+                add_expense_db(item, amount)
+            except ValueError:
+                print("Invalid amount!")
+
+        elif choice == "2":
+            view_expenses_db()
+
+        elif choice == "3":
+            try:
+                exp_id = int(
+                    input("Enter Expense ID to delete: ").strip()
+                )
+                delete_expense_db(exp_id)
+            except ValueError:
+                print("ID must be an integer!")
+
+        elif choice == "4":
+            print("Goodbye!")
+            break
+
+        else:
+            print("Invalid choice!")
+
+
+if __name__ == "__main__":
+    main()
